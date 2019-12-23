@@ -1,0 +1,79 @@
+﻿@using Microsoft.AspNetCore.Http.Connections
+@using Microsoft.AspNetCore.SignalR.Client
+@inherits ComponentBase
+
+@code {
+    private static int Counter2 = 0;
+
+    HubConnection Connection;
+
+    public void CounterChangedFiredEvent(int v)
+    {
+        Counter2 = v;
+
+        if(IsConnected())
+        {
+            Connection.SendAsync("ReceiveMessage", v);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Connection = new HubConnectionBuilder()
+                .WithUrl("http://localhost:5000/hub")
+                .WithAutomaticReconnect()
+                .Build()
+                ;
+
+        Connection.Closed += async (Error) => {
+            Console.WriteLine("Close");
+
+            //await Connection.StartAsync();
+        };
+    }
+
+    protected async Task ConnectToHub()
+    {
+        Connection.On<int>("ReceiveMessage", (v) =>
+        {
+            Counter2 = v;
+            StateHasChanged();
+        });
+
+        await Connection.StartAsync();
+        StateHasChanged();
+    }
+
+    protected async Task Disconnect()
+    {
+        await Connection.StopAsync();
+    }
+
+    public bool IsConnected()
+    {
+        return Connection != null && Connection.State == HubConnectionState.Connected;
+    }
+
+}
+
+@page "/counter"
+
+@if (IsConnected())
+{
+    <SurveyPrompt
+                Title="How is Blazor working for you?"
+                Counter="@Counter2"
+                CounterChanged="CounterChangedFiredEvent"
+                />
+}
+
+<p>Counter: @Counter2</p>
+
+@if (IsConnected())
+{
+    <button @onclick="Disconnect">Disconnect</button>
+}
+else
+{
+    <button @onclick="ConnectToHub">Connect</button>
+}

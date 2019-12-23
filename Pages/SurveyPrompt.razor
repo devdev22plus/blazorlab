@@ -1,0 +1,24 @@
+<input type="button" value="Previuos" @onclick="@Previous" />
+<input type="button" value="Next" @onclick="@Next" />
+
+@code {
+    // Demonstrates how a parent component can supply parameters
+    [Parameter]
+    public string Title { get; set; }
+
+    [Parameter]
+    public int Counter { get; set; }
+
+    [Parameter]
+    public EventCallback<int> CounterChanged { get; set; }
+
+    async void Next()
+    {
+        await CounterChanged.InvokeAsync(++Counter);
+    }
+
+    async void Previous()
+    {
+        await CounterChanged.InvokeAsync(--Counter);
+    }
+}
